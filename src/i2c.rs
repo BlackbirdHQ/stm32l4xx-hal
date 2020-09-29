@@ -190,12 +190,11 @@ where
     pub fn master_transmit(&mut self, addr: u8, bytes: &[u8]) -> Result<(), Error> {
         self.wait_on_busy_until_timeout()?;
 
-        // Send a START condition
-        self.i2c.cr2.write(|w| w.start().set_bit());
-
-        /* Send Slave Address and set NBYTES to write */
+        /* Send a START condition, Slave Address and set NBYTES to write */
         self.i2c.cr2.write(|w| {
-            w.sadd()
+            w.start()
+                .set_bit()
+                .sadd()
                 .bits((addr as u16) << 1)
                 .rd_wrn()
                 .clear_bit()
@@ -230,10 +229,9 @@ where
         self.wait_on_busy_until_timeout()?;
 
         // Send a START condition
-        self.i2c.cr2.write(|w| w.start().set_bit());
-
         self.i2c.cr2.write(|w| {
-            w.sadd()
+            w.start().set_bit()
+                .sadd()
                 .bits((addr as u16) << 1)
                 .rd_wrn()
                 .set_bit()
