@@ -194,14 +194,14 @@ where
         self.i2c.cr2.write(|w| {
             w.start()
                 .set_bit()
+                .autoend()
+                .set_bit()
                 .sadd()
                 .bits((addr as u16) << 1)
                 .rd_wrn()
                 .clear_bit()
                 .nbytes()
                 .bits(bytes.len() as u8)
-                .autoend()
-                .set_bit()
         });
 
         for byte in bytes {
@@ -231,14 +231,14 @@ where
         // Send a START condition
         self.i2c.cr2.write(|w| {
             w.start().set_bit()
+                .autoend()
+                .set_bit()
                 .sadd()
                 .bits((addr as u16) << 1)
                 .rd_wrn()
                 .set_bit()
                 .nbytes()
                 .bits(buffer.len() as u8)
-                .autoend()
-                .set_bit()
         });
 
         for byte in buffer {
