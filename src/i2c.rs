@@ -300,25 +300,77 @@ where
         SDA: SdaPin<I2C>,
     {
         let freq = freq.into().0;
-        assert!(freq <= 1_000_000);
-        // Make sure the I2C unit is disabled so we can configure it
-        i2c.cr1.modify(|_, w| w.pe().clear_bit());
+                    assert!(freq <= 1_000_000);
 
-        // Configure for "Standard mode" (100 KHz)
-        let _ = clocks;
+                    // TODO review compliance with the timing requirements of I2C
+                    // t_I2CCLK = 1 / PCLK1
+                    // t_PRESC  = (PRESC + 1) * t_I2CCLK
+                    // t_SCLL   = (SCLL + 1) * t_PRESC
+                    // t_SCLH   = (SCLH + 1) * t_PRESC
+                    //
+                    // t_SYNC1 + t_SYNC2 > 4 * t_I2CCLK
+                    // t_SCL ~= t_SYNC1 + t_SYNC2 + t_SCLL + t_SCLH
+                    let i2cclk = clocks.pclk1().0;
+                    let ratio = i2cclk / freq - 4;
+                    let (presc, scll, sclh, sdadel, scldel) = if freq >= 100_000 {
+                        // fast-mode or fast-mode plus
+                        // here we pick SCLL + 1 = 2 * (SCLH + 1)
+                        let presc = ratio / 387;
 
-        // Tried all candidates one by one.
-        // 0x00702681; Write OK, Read No
-        // 0x40E03E53; Write No, Read No
-        // 0x00D00E28; Write OK, Read No
-        const I2C_TIMING: u32 = 0x40E03E53;
-        const TIMING_CLEAR_MASK: u32 = 0xF0FFFFFFu32;
-        i2c.timingr.write(|w| {
-            unsafe { w.bits(I2C_TIMING & TIMING_CLEAR_MASK) }
-        });
+                        let sclh = ((ratio / (presc + 1)) - 3) / 3;
+                        let scll = 2 * (sclh + 1) - 1;
 
-        // Check if the value matches.
-        assert_eq!(I2C_TIMING & TIMING_CLEAR_MASK, i2c.timingr.read().bits());
+                        let (sdadel, scldel) = if freq > 400_000 {
+                            // fast-mode plus
+                            let sdadel = 0;
+                            let scldel = i2cclk / 4_000_000 / (presc + 1) - 1;
+
+                            (sdadel, scldel)
+                        } else {
+                            // fast-mode
+                            let sdadel = i2cclk / 8_000_000 / (presc + 1);
+                            let scldel = i2cclk / 2_000_000 / (presc + 1) - 1;
+
+                            (sdadel, scldel)
+                        };
+
+                        (presc, scll, sclh, sdadel, scldel)
+                    } else {
+                        // standard-mode
+                        // here we pick SCLL = SCLH
+                        let presc = ratio / 514;
+
+                        let sclh = ((ratio / (presc + 1)) - 2) / 2;
+                        let scll = sclh;
+
+                        let sdadel = i2cclk / 2_000_000 / (presc + 1);
+                        let scldel = i2cclk / 800_000 / (presc + 1) - 1;
+
+                        (presc, scll, sclh, sdadel, scldel)
+                    };
+
+                    let presc = u8(presc).unwrap();
+                    assert!(presc < 16);
+                    let scldel = u8(scldel).unwrap();
+                    assert!(scldel < 16);
+                    let sdadel = u8(sdadel).unwrap();
+                    assert!(sdadel < 16);
+                    let sclh = u8(sclh).unwrap();
+                    let scll = u8(scll).unwrap();
+
+                    // Configure for "fast mode" (400 KHz)
+                    i2c.timingr.write(|w| {
+                        w.presc()
+                            .bits(presc)
+                            .scll()
+                            .bits(scll)
+                            .sclh()
+                            .bits(sclh)
+                            .sdadel()
+                            .bits(sdadel)
+                            .scldel()
+                            .bits(scldel)
+                    });
 
         // Enable the peripheral
         i2c.cr1.write(|w| w.pe().set_bit().anfoff().enabled());
