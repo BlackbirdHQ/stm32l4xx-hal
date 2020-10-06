@@ -1,50 +1,47 @@
-//! CryptoAuthLib integration
-//!
-//! An example that interacts with the Crypto Authentication secure elements
-//! (ATECC608) via the Rusty driver.
-//!
-//! Because `Rusty_CryptoAuthLib` depends on `defmt`, some setups are necessary for compilation.
-//!
-//! Content of `${HOME}/.cargo/config`
+//! Microchip ATECC608 CryptoAuthLib Integration
+//! --------------------------------------------
+//! 
+//! An example that interacts with the crypto authentication secure elements
+//! ATECC608 via the [Rusty driver](`https://crates.io/crates/Rusty_CryptoAuthLib`).
+//! Tested with a STM32L4x5 chip connected to ATECC608 over I2C.
+//! 
+//! The driver library `Rusty_CryptoAuthLib` depends on `defmt`, so some setups are
+//! necessary for compilation. Tell cargo to perform custom linking by adding
+//! following lines to your `${HOME}/.cargo/config` file or
+//! `stm32l4xx-hal/.cargo/config` file.
+//! 
 //! ```
+//! # .cargo/config
 //! [target.thumbv7em-none-eabihf]
 //! rustflags = [
 //!   # likely, there's another `link-arg` flag already there; KEEP it
-//!   "-C", "link-arg=-Tdefmt.x",
+//!   "-C", "link-arg=-Tdefmt.x", # <- ADD this one
 //! ]
-//!
 //! ```
-//!
-//!
-//!
-//! To run the example, provide `openocd.gdb` and `openocd.cfg` resp.
-//!
-//! ```
-//! target extended-remote localhost:3333
-//! monitor arm semihosting enable
-//! load
-//! ```
-//!
+//! 
+//! As defined in `stm32l4xx-hal/.cargo/config`, `cargo run ..` starts semihosting
+//! with OpenOCD and GDB. To run this example, provide `openocd.gdb` and
+//! `openocd.cfg` files in the same directory as `Cargo.toml`.
+//! 
 //! ``` bash
 //! openocd openocd.cfg &
 //! cargo run --example i2c_atecc608_cryptoauthlib \
 //!     --target thumbv7em-none-eabihf \
 //!     --features stm32l4x5
 //! ```
-//!
-//! Content of `openocd.gdb`
+//! 
 //! ```
+//! # openocd.gdb
 //! target extended-remote localhost:3333
 //! monitor arm semihosting enable
 //! load
 //! ```
-//!
-//! Content of `openocd.cfg`
+//! 
 //! ```
+//! # openocd.cfg
 //! source [find interface/stlink-v2.cfg]
 //! source [find target/stm32l4x.cfg]
 //! ```
-//!
 #![no_main]
 #![no_std]
 
@@ -118,10 +115,13 @@ fn main() -> ! {
     // Create CryptoAuth client
     let mut crypto_auth = ATECC608A::new(i2c, delay, timer).unwrap();
 
-    crypto_auth
+    let info = crypto_auth
         .atcab_info()
-        .map(|info| writeln!(hstdout, "{:02x?}", info))
-        .unwrap_or_else(|e| panic!("Error: {:?}", e));
+        .unwrap();
+    assert_eq!(info, [0x00, 0x00, 0x60, 0x02]);
+
+    let sha = crypto_auth.atcab_sha(&[0x01, 0x02, 0x03, 0x04, 0x05]).unwrap();
+    writeln!(hstdout, "{:02x?}", sha);
 
     writeln!(hstdout, "ATECC608A test finished.");
     loop {}
