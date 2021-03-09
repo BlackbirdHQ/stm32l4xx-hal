@@ -41,7 +41,7 @@ version = "1.0.0-alpha.4"
 
 [dependencies.embedded-storage]
 git = "https://github.com/rust-embedded-community/embedded-storage"
-rev = "adf0f9d"
+branch = "storage-rework"
 
 [dependencies.stm32-usbd]
 version = "0.5.1"
