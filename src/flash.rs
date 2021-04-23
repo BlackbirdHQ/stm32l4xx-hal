@@ -211,11 +211,7 @@ impl<'a> FlashProgramming<'a> {
 
         if sr.bsy().bit_is_set() {
             Err(Error::Busy)
-        } else if sr.pgaerr().bit_is_set() {
-            Err(Error::Illegal)
-        } else if sr.progerr().bit_is_set() {
-            Err(Error::Illegal)
-        } else if sr.wrperr().bit_is_set() {
+        } else if sr.pgaerr().bit_is_set() | sr.progerr().bit_is_set() | sr.wrperr().bit_is_set() {
             Err(Error::Illegal)
         } else {
             Ok(())
