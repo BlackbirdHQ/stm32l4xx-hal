@@ -62,8 +62,10 @@ pub enum FlashVariant {
         feature = "stm32l4x6"
     ))]
     Size256KB = 256,
+    /// 128KB flash size
     #[cfg(any(feature = "stm32l4x1", feature = "stm32l4x2", feature = "stm32l4x3",))]
     Size128KB = 128,
+    /// 64KB flash size
     #[cfg(feature = "stm32l4x2")]
     Size64KB = 64,
 }
@@ -213,7 +215,6 @@ macro_rules! generate_register {
         #[doc = $name]
         #[doc = " register"]
         pub struct $a;
-
 
         impl $a {
             #[allow(unused)]

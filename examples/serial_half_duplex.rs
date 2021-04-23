@@ -5,6 +5,7 @@
 //! Half-Duplex mode internally connect TX to RX, meaning that bytes sent will also be received.
 #![deny(unsafe_code)]
 #![deny(warnings)]
+#![allow(clippy::empty_loop)]
 #![no_main]
 #![no_std]
 

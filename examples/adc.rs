@@ -5,7 +5,7 @@ use panic_rtt_target as _;
 
 use cortex_m_rt::entry;
 use rtt_target::{rprint, rprintln};
-use stm32l4xx_hal::{adc::ADC, delay::Delay, pac, prelude::*};
+use stm32l4xx_hal::{adc::ADC, delay::Delay, flash::FlashVariant, pac, prelude::*};
 
 #[entry]
 fn main() -> ! {
@@ -16,7 +16,7 @@ fn main() -> ! {
     let dp = pac::Peripherals::take().unwrap();
 
     let mut rcc = dp.RCC.constrain();
-    let mut flash = dp.FLASH.constrain();
+    let mut flash = dp.FLASH.constrain(FlashVariant::Size256KB);
     let mut pwr = dp.PWR.constrain(&mut rcc.apb1r1);
 
     let clocks = rcc.cfgr.freeze(&mut flash.acr, &mut pwr);
@@ -30,7 +30,7 @@ fn main() -> ! {
     rprintln!(" done.");
 
     loop {
-        let value = adc.read(&mut a1).unwrap();
+        let value = adc.try_read(&mut a1).unwrap();
         rprintln!("Value: {}", value);
     }
 }

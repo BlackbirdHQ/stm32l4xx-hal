@@ -7,6 +7,7 @@ use heapless::{consts::U8, spsc};
 use nb::block;
 use rtt_target::{rprint, rprintln};
 use stm32l4xx_hal::{
+    flash::FlashVariant,
     pac::{self, USART2},
     prelude::*,
     serial::{self, Config, Serial},
@@ -32,7 +33,7 @@ const APP: () = {
         let p = pac::Peripherals::take().unwrap();
 
         let mut rcc = p.RCC.constrain();
-        let mut flash = p.FLASH.constrain();
+        let mut flash = p.FLASH.constrain(FlashVariant::Size256KB);
         let mut pwr = p.PWR.constrain(&mut rcc.apb1r1);
 
         let clocks = rcc.cfgr.freeze(&mut flash.acr, &mut pwr);
@@ -73,7 +74,7 @@ const APP: () = {
         loop {
             if let Some(b) = rx.dequeue() {
                 rprintln!("Echoing '{}'", b as char);
-                block!(tx.write(b)).unwrap();
+                block!(tx.try_write(b)).unwrap();
             }
         }
     }
@@ -83,7 +84,7 @@ const APP: () = {
         let rx = cx.resources.rx;
         let queue = cx.resources.rx_prod;
 
-        let b = match rx.read() {
+        let b = match rx.try_read() {
             Ok(b) => b,
             Err(err) => {
                 rprintln!("Error reading from USART: {:?}", err);
