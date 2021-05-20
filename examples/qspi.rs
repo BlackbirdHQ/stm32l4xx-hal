@@ -71,7 +71,9 @@ fn main() -> ! {
     // if all goes well you should reach this breakpoint
     asm::bkpt();
 
-    loop {}
+    loop {
+        continue;
+    }
 }
 
 #[exception]

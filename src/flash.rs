@@ -214,7 +214,6 @@ macro_rules! generate_register {
         #[doc = " register"]
         pub struct $a;
 
-
         impl $a {
             #[allow(unused)]
             pub(crate) fn $b(&mut self) -> &flash::$a {

@@ -58,10 +58,14 @@ fn main() -> ! {
             BUTTON.borrow(cs).replace(Some(board_btn));
         });
 
-        loop {}
+        loop {
+            continue;
+        }
     }
 
-    loop {}
+    loop {
+        continue;
+    }
 }
 
 #[interrupt]

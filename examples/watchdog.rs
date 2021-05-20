@@ -56,7 +56,11 @@ fn main() -> ! {
         writeln!(hstdout, "Good bye!").unwrap();
     }
 
-    loop {}
+    watchdog.feed();
+    writeln!(hstdout, "Good bye!").unwrap();
+    loop {
+        continue;
+    }
 }
 
 #[exception]
