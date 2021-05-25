@@ -3,6 +3,7 @@
 //! This example requires you to short (connect) the TX and RX pins.
 #![deny(unsafe_code)]
 #![deny(warnings)]
+#![allow(clippy::empty_loop)]
 #![no_main]
 #![no_std]
 
