@@ -76,7 +76,7 @@ impl FlashVariant {
 
 /// Error type of flash peripheral when programming
 /// If an error occurs during a program or erase operation, one of the following error flags is set
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum ProgrammingError {
     /// Programming Error
     ///
@@ -140,7 +140,7 @@ pub enum ProgrammingError {
 }
 
 /// Error type of flash peripheral
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub enum Error {
     /// Flash controller is not done yet
     Busy,
