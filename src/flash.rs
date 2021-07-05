@@ -34,7 +34,6 @@ use crate::stm32::{flash, FLASH};
 use core::convert::TryInto;
 use core::{mem, ops::Drop, ptr};
 use embedded_storage::{
-    iter::IterableByOverlaps,
     nor_flash::{NorFlash, ReadNorFlash},
     Region,
 };
@@ -267,7 +266,7 @@ impl McuFlash {
 
     /// Return the capacity of the flash in bytes
     pub fn capacity(&self) -> usize {
-        self.memory_map.0.bytes() - 1
+        self.memory_map.0.bytes()
     }
 }
 
@@ -521,10 +520,10 @@ impl MemoryMap {
     /// Get an iterator over all the possible pages of the flash memory
     fn pages(&self) -> impl Iterator<Item = Page> {
         let page_size = self.page_size();
-        let last_page = (self.0.bytes() / page_size) - 1;
+        let last_page = self.0.bytes() / page_size;
 
         (0..last_page).map(move |page_number| {
-            let bank = if page_number <= last_page / 2 {
+            let bank = if page_number < (last_page+1) / 2 {
                 MemoryBank::Bank1
             } else {
                 MemoryBank::Bank2
@@ -555,7 +554,7 @@ impl MemoryMap {
 
 impl Region for Page {
     fn contains(&self, address: u32) -> bool {
-        (self.location <= address) && (self.end() > address)
+        (self.location <= address) && (address <= self.end())
     }
 }
 
@@ -597,7 +596,7 @@ impl<'a> ReadNorFlash for FlashProgramming<'a> {
     }
 
     fn capacity(&self) -> usize {
-        self.memory_map.0.bytes() - 1
+        self.memory_map.0.bytes()
     }
 }
 
@@ -630,7 +629,7 @@ impl<'a> NorFlash for FlashProgramming<'a> {
 
     fn try_erase(&mut self, from: u32, to: u32) -> Result<(), Self::Error> {
         // Check that from & to is properly aligned to a proper erase resolution
-        if from % 2048 != 0 || to % 2048 != 0 {
+        if to % 2048 != 0 || from % 2048 != 0 {
             return Err(Error::Programming(ProgrammingError::Alignment));
         }
 
